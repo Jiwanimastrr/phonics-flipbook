@@ -81,13 +81,26 @@ function App() {
     // 이전에 재생되던 음성이 있다면 즉시 종료
     window.speechSynthesis.cancel();
     
-    // 단순하게 조합된 단어 그대로 인스턴스 생성
-    const utterance = new SpeechSynthesisUtterance(fullWord);
+    // 약어(feb, jan, wed 등)가 사전에 등록된 단어(February 등)로 자동 변환되는 것을 방지하기 위한 필터링
+    let safeWord = fullWord.toLowerCase();
+    const overrides: Record<string, string> = {
+      'feb': 'febb', 'jan': 'jann', 'mar': 'mahr', 'apr': 'appr',
+      'aug': 'awg', 'sep': 'sepp', 'oct': 'ahct', 'nov': 'nahv', 'dec': 'deck',
+      'wed': 'wedd', 'sec': 'seck', 'min': 'minn', 'sat': 'satt', 'sun': 'sunn',
+      'mon': 'mahn', 'tue': 'tooz', 'thu': 'thuh', 'fri': 'fry'
+    };
+    
+    // 알파벳 하나씩 끊어 읽는 현상 방지를 위해 끝에 마침표를 찍거나 발음을 약간 변형
+    const finalUtteranceText = overrides[safeWord] || safeWord + ".";
+    
+    const utterance = new SpeechSynthesisUtterance(finalUtteranceText);
     utterance.lang = 'en-US';
     
-    // AI 원어민 억양과 가장 가까운 Google US English 목소리를 최우선으로 찾기
+    // Google 클라우드 음성은 의미 없는 단어를 알파벳으로 읽어버리거나 약어로 인식하는 성향이 강함.
+    // Mac/iOS 계열의 고품질 로컬 원어민 음성(Samantha, Alex, Siri 등)을 최우선으로 사용하여 파닉스 발음을 강제함.
     const voices = window.speechSynthesis.getVoices();
-    const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) 
+    const usVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Siri') || v.name.includes('Samantha') || v.name.includes('Alex'))) 
+                 || voices.find(v => v.lang === 'en-US' && v.localService)
                  || voices.find(v => v.lang === 'en-US');
                  
     if (usVoice) {
