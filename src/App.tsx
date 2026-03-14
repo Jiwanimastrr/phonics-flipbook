@@ -108,30 +108,19 @@ function App() {
     const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) 
                  || voices.find(v => v.lang === 'en-US');
 
-    // 연음 학습(Phonics Blending): 각 파트를 끊어서 먼저 들려주고, 마지막에 전체 단어를 읽습니다.
-    // PHONICS_MAP을 사용하여 약어(feb 등)를 사전에 있는 단어로 잘못 읽는 현상을 방지합니다.
-    const sequence = [
-      PHONICS_MAP[word[0]] || word[0],
-      PHONICS_MAP[word[1]] || word[1],
-      PHONICS_MAP[word[2]] || word[2],
-      `${PHONICS_MAP[word[0]] || word[0]} ${PHONICS_MAP[word[1]] || word[1]} ${PHONICS_MAP[word[2]] || word[2]}`.replace(/\s+/g, '')
-    ];
+    // PHONICS_MAP을 사용하여 약어(feb 등)를 사전에 있는 단어(February)로 잘못 읽는 현상을 방지
+    // 띄어쓰기 없이 붙여서 한 단어로 들리게 만듭니다.
+    const phoneticWord = `${PHONICS_MAP[word[0]] || word[0]} ${PHONICS_MAP[word[1]] || word[1]} ${PHONICS_MAP[word[2]] || word[2]}`.replace(/\s+/g, '');
     
-    sequence.forEach((text, index) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      if (usVoice) {
-        utterance.voice = usVoice;
-      }
-      
-      const isFullWord = index === sequence.length - 1;
-      
-      // 개별 철자는 천천히, 전체 단어는 부드럽게 연음으로 (약간 느린 속도)
-      utterance.rate = isFullWord ? 0.8 : 0.6;
-      utterance.pitch = isFullWord ? 1 : 1.2; // 개별 철자는 좀 더 파닉스처럼 또렷하게
-      
-      window.speechSynthesis.speak(utterance);
-    });
+    const utterance = new SpeechSynthesisUtterance(phoneticWord);
+    utterance.lang = 'en-US';
+    if (usVoice) {
+      utterance.voice = usVoice;
+    }
+    
+    utterance.rate = 0.8; // 약간 느린 속도
+    
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleModeChange = (newMode: Mode) => {
