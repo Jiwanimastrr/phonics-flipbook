@@ -19,28 +19,6 @@ function getRandomItem(arr: string[]): string {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Phonics Dictionary to trick Web Speech API into saying the letter sounds instead of letter names/abbreviations.
-const PHONICS_MAP: Record<string, string> = {
-  // Short Vowels
-  'a': 'æ', 'e': 'eh', 'i': 'ih', 'o': 'ah', 'u': 'uh',
-  // Consonants (approximate sounds)
-  'b': 'buh', 'c': 'kuh', 'd': 'duh', 'f': 'fff', 'g': 'guh', 'h': 'huh',
-  'j': 'juh', 'k': 'kuh', 'l': 'lll', 'm': 'mmm', 'n': 'nnn', 'p': 'puh',
-  'q': 'kwuh', 'r': 'rrr', 's': 'sss', 't': 'tuh', 'v': 'vvv', 'w': 'wuh',
-  'x': 'ks', 'y': 'yuh', 'z': 'zzz',
-  // Double Vowels
-  'ai': 'ay', 'ay': 'ay', 'ee': 'ee', 'ea': 'ee', 'ie': 'eye', 'oa': 'oh',
-  'oe': 'oh', 'ue': 'oo', 'oo': 'oo', 'ou': 'ow', 'ow': 'ow', 'oi': 'oy',
-  'oy': 'oy', 'au': 'aw', 'aw': 'aw', 'ew': 'oo',
-  // Consonant Blends/Digraphs
-  'bl': 'bluh', 'cl': 'kluh', 'fl': 'fluh', 'gl': 'gluh', 'pl': 'pluh', 'sl': 'sluh',
-  'br': 'bruh', 'cr': 'kruh', 'dr': 'druh', 'fr': 'fruh', 'gr': 'gruh', 'pr': 'pruh', 'tr': 'truh',
-  'st': 'st', 'sp': 'sp', 'sm': 'sm', 'sn': 'sn', 'sc': 'sk', 'sk': 'sk', 'sw': 'sw',
-  'ch': 'ch', 'sh': 'sh', 'th': 'th', 'wh': 'wuh', 'ph': 'fff',
-  'ng': 'ng', 'nk': 'ngk', 'ck': 'k', 'mb': 'm', 'ss': 'sss', 'll': 'lll', 'ff': 'fff', 'zz': 'zzz',
-  'nd': 'nd', 'nt': 'nt', 'mp': 'mp'
-};
-
 function App() {
   const [mode, setMode] = useState<Mode>('CVC');
   const [word, setWord] = useState<[string, string, string]>(['', '', '']);
@@ -100,25 +78,24 @@ function App() {
     const fullWord = word.join('');
     if (!fullWord) return;
     
-    // Cancel any ongoing speech
+    // 이전에 재생되던 음성이 있다면 즉시 종료
     window.speechSynthesis.cancel();
     
+    // 단순하게 조합된 단어 그대로 인스턴스 생성
+    const utterance = new SpeechSynthesisUtterance(fullWord);
+    utterance.lang = 'en-US';
+    
+    // AI 원어민 억양과 가장 가까운 Google US English 목소리를 최우선으로 찾기
     const voices = window.speechSynthesis.getVoices();
-    // Prefer high-quality cloud voices (like Google US English) for a more natural, AI-like native speaker sound.
     const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) 
                  || voices.find(v => v.lang === 'en-US');
-
-    // PHONICS_MAP을 사용하여 약어(feb 등)를 사전에 있는 단어(February)로 잘못 읽는 현상을 방지
-    // 띄어쓰기 없이 붙여서 한 단어로 들리게 만듭니다.
-    const phoneticWord = `${PHONICS_MAP[word[0]] || word[0]} ${PHONICS_MAP[word[1]] || word[1]} ${PHONICS_MAP[word[2]] || word[2]}`.replace(/\s+/g, '');
-    
-    const utterance = new SpeechSynthesisUtterance(phoneticWord);
-    utterance.lang = 'en-US';
+                 
     if (usVoice) {
       utterance.voice = usVoice;
     }
     
-    utterance.rate = 0.8; // 약간 느린 속도
+    // 너무 빠르지 않게 살짝 조절
+    utterance.rate = 0.8; 
     
     window.speechSynthesis.speak(utterance);
   };
