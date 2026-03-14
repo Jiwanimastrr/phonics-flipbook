@@ -112,9 +112,9 @@ function App() {
     utterance.lang = 'en-US';
     
     const voices = window.speechSynthesis.getVoices();
-    // Prefer local system voices (they usually try to pronounce nonsense words phonetically)
-    // Avoid cloud voices like Google's which often spell out unknown short words
-    const usVoice = voices.find(v => v.lang === 'en-US' && v.localService === true) 
+    // Prefer high-quality cloud voices (like Google US English) for a more natural, AI-like native speaker sound.
+    // The phoneticWord trick prevents it from reading abbreviations.
+    const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) 
                  || voices.find(v => v.lang === 'en-US');
     if (usVoice) {
       utterance.voice = usVoice;
